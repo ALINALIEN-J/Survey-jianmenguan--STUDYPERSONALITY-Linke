@@ -15,11 +15,11 @@
         <p class="eyebrow">学习人格探索</p>
         <h1>认识你的学习方式</h1>
       </div>
-      <span id="progressText" class="progress-text">基本信息</span>
+      <span id="progressText" class="progress-text">{{ '已完成' if already_submitted else '基本信息' }}</span>
     </header>
 
     <div class="progress-track" aria-hidden="true">
-      <div id="progressBar" class="progress-bar"></div>
+      <div id="progressBar" class="progress-bar"{% if already_submitted %} style="width: 100%"{% endif %}></div>
     </div>
 
     {% with messages = get_flashed_messages(with_categories=true) %}
@@ -28,6 +28,14 @@
       {% endfor %}
     {% endwith %}
 
+    {% if already_submitted %}
+      <section class="glass-panel completed-panel">
+        <div class="completed-mark" aria-hidden="true">✓</div>
+        <p class="eyebrow">提交成功</p>
+        <h2>你已经完成过本次问卷</h2>
+        <p>每个浏览器只能提交一次，感谢你的参与。</p>
+      </section>
+    {% else %}
     <form id="surveyForm" action="{{ url_for('submit') }}" method="post" novalidate>
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
@@ -152,6 +160,34 @@
         </div>
       </section>
     </form>
+    {% endif %}
+  </main>
+</body>
+</html>
+
+=== templates/result.html ===
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f6f8fb">
+  <title>你的学习人格</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="result-page">
+  <main class="result-shell">
+    <article class="glass-panel result-card">
+      <p class="eyebrow">{{ nickname }} 的学习人格</p>
+      <div class="personality-emoji" aria-hidden="true">{{ emoji }}</div>
+      <h1>{{ name }}</h1>
+      <p class="personality-description">{{ description }}</p>
+      <div class="interpretation">
+        <h2>详细解读</h2>
+        <p>{{ interpretation }}</p>
+      </div>
+      <p class="thank-you">谢谢你参与本次问卷调查。</p>
+    </article>
   </main>
 </body>
 </html>
