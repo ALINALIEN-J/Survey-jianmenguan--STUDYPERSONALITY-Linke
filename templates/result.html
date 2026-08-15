@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f6f8fb">
+  <title>你的学习人格</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="result-page">
+  <main class="result-shell">
+    <article class="glass-panel result-card">
+      <p class="eyebrow">{{ nickname }} 的学习人格</p>
+      <div class="personality-emoji" aria-hidden="true">{{ emoji }}</div>
+      <h1>{{ name }}</h1>
+      <p class="personality-description">{{ description }}</p>
+      <div class="interpretation">
+        <h2>详细解读</h2>
+        <p>{{ interpretation }}</p>
+      </div>
+      <p class="thank-you">谢谢你参与本次问卷调查。</p>
+    </article>
+  </main>
+</body>
+</html>

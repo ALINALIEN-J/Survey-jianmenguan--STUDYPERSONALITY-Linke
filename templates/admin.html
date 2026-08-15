@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>问卷管理后台</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="admin-page">
+  {% if not authenticated %}
+    <main class="login-shell">
+      <form class="glass-panel login-card" method="post" action="{{ url_for('admin_dashboard') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <p class="eyebrow">管理员入口</p>
+        <h1>问卷数据后台</h1>
+        <label class="field">
+          <span>管理员密码</span>
+          <input type="password" name="password" autocomplete="current-password" required autofocus>
+        </label>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% for category, message in messages %}
+            <div class="alert {{ category }}" role="alert">{{ message }}</div>
+          {% endfor %}
+        {% endwith %}
+        <button class="primary-button full-button" type="submit">进入后台</button>
+      </form>
+    </main>
+  {% else %}
+    <main class="admin-shell">
+      <header class="admin-header">
+        <div>
+          <p class="eyebrow">管理后台</p>
+          <h1>问卷统计</h1>
+          <p>有效问卷共 <strong>{{ total }}</strong> 份</p>
+        </div>
+        <div class="admin-actions">
+          <a class="primary-button download-button" href="{{ url_for('admin_download') }}">下载原始数据 CSV</a>
+          <form method="post" action="{{ url_for('admin_logout') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button class="back-button" type="submit">退出</button>
+          </form>
+        </div>
+      </header>
+
+      <section class="stats-list" aria-label="逐题统计">
+        {% for item in stats %}
+          <article class="stat-item">
+            <div class="stat-question">
+              <span class="question-number">{{ item.number }}</span>
+              <div>
+                <span class="question-code">{{ item.code }}</span>
+                <h2>{{ item.text }}</h2>
+              </div>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>评分</th>
+                    {% for score in range(1, 6) %}<th>{{ score }}</th>{% endfor %}
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <th>人数</th>
+                    {% for score in range(1, 6) %}<td>{{ item.counts[score] }}</td>{% endfor %}
+                  </tr>
+                  <tr>
+                    <th>百分比</th>
+                    {% for score in range(1, 6) %}
+                      <td>{{ '%.1f'|format(item.counts[score] * 100 / total) if total else '0.0' }}%</td>
+                    {% endfor %}
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </article>
+        {% endfor %}
+      </section>
+    </main>
+  {% endif %}
+</body>
+</html>

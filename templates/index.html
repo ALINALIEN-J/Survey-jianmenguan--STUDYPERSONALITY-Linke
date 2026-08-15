@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f6f8fb">
+  <title>学习人格问卷</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <script src="{{ url_for('static', filename='script.js') }}" defer></script>
+</head>
+<body class="survey-page">
+  <main class="survey-shell">
+    <header class="survey-header">
+      <div>
+        <p class="eyebrow">学习人格探索</p>
+        <h1>认识你的学习方式</h1>
+      </div>
+      <span id="progressText" class="progress-text">基本信息</span>
+    </header>
+
+    <div class="progress-track" aria-hidden="true">
+      <div id="progressBar" class="progress-bar"></div>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for category, message in messages %}
+        <div class="alert {{ category }}" role="alert">{{ message }}</div>
+      {% endfor %}
+    {% endwith %}
+
+    <form id="surveyForm" action="{{ url_for('submit') }}" method="post" novalidate>
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+      <section class="slide active" data-step="profile">
+        <div class="glass-panel profile-panel">
+          <div class="section-heading">
+            <span class="step-badge">开始</span>
+            <h2>先认识一下你</h2>
+            <p>信息仅用于本次问卷分析，请按实际情况填写。</p>
+          </div>
+
+          <div class="form-grid">
+            <label class="field field-wide">
+              <span>昵称</span>
+              <input type="text" name="nickname" maxlength="30" autocomplete="nickname" placeholder="请输入昵称" required>
+            </label>
+            <label class="field">
+              <span>年龄</span>
+              <input type="number" name="age" min="6" max="100" inputmode="numeric" placeholder="请输入年龄" required>
+            </label>
+            <label class="field">
+              <span>性别</span>
+              <select name="gender" required>
+                <option value="" selected disabled>请选择</option>
+                <option value="男">男</option>
+                <option value="女">女</option>
+                <option value="其他">其他</option>
+                <option value="不愿透露">不愿透露</option>
+              </select>
+            </label>
+            <label class="field field-wide">
+              <span>年级</span>
+              <select name="grade" required>
+                <option value="" selected disabled>请选择</option>
+                {% for grade in ['初一', '初二', '初三', '高一', '高二', '高三', '已毕业'] %}
+                  <option value="{{ grade }}">{{ grade }}</option>
+                {% endfor %}
+              </select>
+            </label>
+          </div>
+
+          <fieldset class="school-fieldset">
+            <legend>你是否是剑门关高级中学的同学？</legend>
+            <div class="segmented">
+              <label><input type="radio" name="is_jmg_student" value="是" required><span>是</span></label>
+              <label><input type="radio" name="is_jmg_student" value="否" required><span>否</span></label>
+            </div>
+          </fieldset>
+
+          <p class="form-error" aria-live="polite"></p>
+          <div class="nav-row nav-end">
+            <button class="primary-button" type="button" data-next>开始答题 <span aria-hidden="true">→</span></button>
+          </div>
+        </div>
+      </section>
+
+      {% for code, question in questions %}
+        {% set number = loop.index %}
+        <section class="slide" data-step="question" data-question="{{ number }}">
+          <div class="glass-panel question-panel">
+            <div class="question-meta">
+              <span>第 {{ number }} 题</span>
+              <span>{{ code }}</span>
+            </div>
+            <h2>{{ question }}</h2>
+
+            <fieldset class="likert-fieldset">
+              <legend class="sr-only">请选择 1 到 5 分</legend>
+              <div class="scale-labels" aria-hidden="true">
+                <span>完全不符合</span>
+                <span>中立</span>
+                <span>非常符合</span>
+              </div>
+              <div class="likert-options">
+                {% for score in range(1, 6) %}
+                  <label class="score-option score-{{ score }}">
+                    <input type="radio" name="q{{ number }}" value="{{ score }}" required>
+                    <span class="score-circle">{{ score }}</span>
+                  </label>
+                {% endfor %}
+              </div>
+            </fieldset>
+
+            <p class="selection-hint" aria-live="polite">选择后自动进入下一题</p>
+            <div class="nav-row">
+              <button class="back-button" type="button" data-back><span aria-hidden="true">←</span> 上一页</button>
+              <button class="next-button" type="button" data-next disabled>下一题 <span aria-hidden="true">→</span></button>
+            </div>
+          </div>
+        </section>
+      {% endfor %}
+
+      <section class="slide" data-step="activities">
+        <div class="glass-panel activity-panel">
+          <div class="section-heading">
+            <span class="step-badge">最后一题 · 不计分</span>
+            <h2>你希望清华大学支教支队组织什么形式的活动？</h2>
+            <p>可选择多项。</p>
+          </div>
+
+          <fieldset class="activity-options">
+            <legend class="sr-only">活动形式</legend>
+            {% for option in activity_options %}
+              <label class="activity-option">
+                <input type="checkbox" name="activities" value="{{ option }}"{% if option == '其他' %} id="otherActivity"{% endif %}>
+                <span class="checkmark" aria-hidden="true">✓</span>
+                <span>{{ option }}</span>
+              </label>
+            {% endfor %}
+          </fieldset>
+
+          <label id="otherActivityField" class="field other-field" hidden>
+            <span>请填写其他活动</span>
+            <textarea name="activity_other" maxlength="200" rows="3" placeholder="请输入你期待的活动形式"></textarea>
+          </label>
+
+          <p class="form-error" aria-live="polite"></p>
+          <div class="nav-row">
+            <button class="back-button" type="button" data-back><span aria-hidden="true">←</span> 上一题</button>
+            <button class="primary-button" type="submit">查看我的结果 <span aria-hidden="true">→</span></button>
+          </div>
+        </div>
+      </section>
+    </form>
+  </main>
+</body>
+</html>
