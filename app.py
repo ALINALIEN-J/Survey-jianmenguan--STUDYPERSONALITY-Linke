@@ -25,6 +25,8 @@ app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "change-this-secret-key-
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATABASE = os.environ.get("DATABASE_PATH", os.path.join(BASE_DIR, "questionnaire.db"))
 ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "admin123")
+COMPLETION_COOKIE = "survey_completed"
+COMPLETION_COOKIE_MAX_AGE = 60 * 60 * 24 * 365
 
 QUESTIONS = [
     ("A1", "在学习中，我觉得能够自由地选择学习方式和节奏"),
@@ -83,8 +85,10 @@ PERSONALITIES = {
 ACTIVITY_OPTIONS = [
     "心理辅导/焦虑缓解",
     "职业生涯规划",
-    "学习经验分享",
+    "学科方法/备考策略",
     "专业知识交流及AI使用",
+    "志愿者励志故事",
+    "沟通表达能力提升技巧",
     "其他",
 ]
 
@@ -144,11 +148,22 @@ def admin_required(view):
 
 @app.route("/")
 def index():
-    return render_template("index.html", questions=QUESTIONS, activity_options=ACTIVITY_OPTIONS)
+    if request.cookies.get(COMPLETION_COOKIE) == "1":
+        if session.get("response_id"):
+            return redirect(url_for("result"))
+        return render_template("index.html", already_submitted=True)
+    return render_template(
+        "index.html",
+        already_submitted=False,
+        questions=QUESTIONS,
+        activity_options=ACTIVITY_OPTIONS,
+    )
 
 
 @app.post("/submit")
 def submit():
+    if request.cookies.get(COMPLETION_COOKIE) == "1":
+        return redirect(url_for("result" if session.get("response_id") else "index"))
     validate_csrf()
     nickname = request.form.get("nickname", "").strip()
     age_text = request.form.get("age", "").strip()
@@ -217,7 +232,15 @@ def submit():
 
     session["response_id"] = response_id
     session.pop("csrf_token", None)
-    return redirect(url_for("result"))
+    response = redirect(url_for("result"))
+    response.set_cookie(
+        COMPLETION_COOKIE,
+        "1",
+        max_age=COMPLETION_COOKIE_MAX_AGE,
+        httponly=True,
+        samesite="Lax",
+    )
+    return response
 
 
 @app.route("/result")
@@ -309,4 +332,4 @@ init_db()
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 8080)))
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 8080))) port=int(os.environ.get("PORT", 8080)))
